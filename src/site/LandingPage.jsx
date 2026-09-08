@@ -44,13 +44,15 @@ function HeroSection({ nav, hero }) {
       </div>
 
       {hero.portraitUrl ? (
-        <FadeIn className="jc-portrait-wrap" delay={0.6} y={30}>
-          <div className="jc-portrait-inner">
-            <Magnet padding={150} strength={3}>
-              <Img src={hero.portraitUrl} alt="" />
-            </Magnet>
-          </div>
-        </FadeIn>
+                <div className="jc-portrait-wrap">
+          <FadeIn delay={0.6} y={30}>
+            <div className="jc-portrait-inner">
+              <Magnet padding={150} strength={3}>
+                <Img src={hero.portraitUrl} alt="" />
+              </Magnet>
+            </div>
+          </FadeIn>
+        </div>
       ) : null}
     </section>
   );
