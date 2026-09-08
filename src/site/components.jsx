@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect, useMemo, useLayoutEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
 /** Fade-and-slide entrance, played once when the element scrolls into view. */
@@ -35,7 +35,46 @@ export function FadeIn({
     </MotionTag>
   );
 }
+/**
+ * Scales a single line of text so it spans its container exactly.
+ * Returns [headingRef, textRef] — the first goes on the block element,
+ * the second on an inline span wrapping the text.
+ */
+export function useFitText(text) {
+  const headingRef = useRef(null);
+  const textRef = useRef(null);
 
+  useLayoutEffect(() => {
+    const heading = headingRef.current;
+    const span = textRef.current;
+    if (!heading || !span) return;
+
+    const fit = () => {
+      const available = heading.clientWidth;
+      if (!available) return;
+
+      // Measure at a known size, then scale by the ratio. One reflow, no loop.
+      const PROBE = 100;
+      heading.style.fontSize = `${PROBE}px`;
+      const width = span.getBoundingClientRect().width;
+      if (!width) return;
+
+      heading.style.fontSize = `${(available / width) * PROBE}px`;
+    };
+
+    fit();
+
+    const observer = new ResizeObserver(fit);
+    observer.observe(heading);
+
+    // Kanit loads asynchronously; the first measurement uses fallback metrics.
+    if (document.fonts?.ready) document.fonts.ready.then(fit);
+
+    return () => observer.disconnect();
+  }, [text]);
+
+  return [headingRef, textRef];
+}
 /** Pulls its child toward the cursor while the pointer is nearby. */
 export function Magnet({
   children,

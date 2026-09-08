@@ -2,9 +2,11 @@ import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { api } from "../api.js";
 import {
+    
   FadeIn,
   Magnet,
   AnimatedText,
+  useFitText,
   Img,
   ContactButton,
   LiveProjectButton,
@@ -13,6 +15,7 @@ import {
 /* ------------------------------ sections ------------------------------ */
 
 function HeroSection({ nav, hero }) {
+    const [headingRef, textRef] = useFitText(hero.heading);
   return (
     <section className="jc-hero">
       <FadeIn as="nav" className="jc-nav" delay={0} y={-20}>
@@ -23,9 +26,11 @@ function HeroSection({ nav, hero }) {
         ))}
       </FadeIn>
 
-      <div style={{ overflow: "hidden" }}>
-        <FadeIn as="h1" className="jc-hero-title hero-heading" delay={0.15} y={40}>
-          {hero.heading}
+           <div style={{ overflow: "hidden" }}>
+        <FadeIn delay={0.15} y={40}>
+          <h1 ref={headingRef} className="jc-hero-title hero-heading">
+            <span ref={textRef}>{hero.heading}</span>
+          </h1>
         </FadeIn>
       </div>
 

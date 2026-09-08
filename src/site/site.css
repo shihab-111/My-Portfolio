@@ -83,6 +83,11 @@
   margin: 24px 0 0;
   text-align: center;
 }
+.jc-hero-title > span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .jc-hero-bottom {
   display: flex;
   justify-content: space-between;
@@ -92,6 +97,7 @@
   position: relative;
   z-index: 20;
 }
+
 .jc-hero-copy {
   color: var(--text);
   font-weight: 300;
@@ -120,7 +126,7 @@
 
 @media (min-width: 640px) {
   .jc-nav { padding: 24px 40px 0; }
-  .jc-hero-title { font-size: 15vw; margin-top: 16px; }
+    .jc-hero-title { margin-top: 16px; }
   .jc-hero-bottom { padding: 0 40px 32px; }
   .jc-hero-copy { max-width: 220px; }
   .jc-portrait-wrap { top: auto; bottom: 0; width: 360px; }
@@ -128,14 +134,13 @@
 }
 @media (min-width: 768px) {
   .jc-nav a { font-size: 1.125rem; padding-top: 8px; }
-  .jc-hero-title { font-size: 16vw; margin-top: -20px; }
+    .jc-hero-title { margin-top: -20px; }
   .jc-hero-bottom { padding: 0 40px 40px; }
   .jc-hero-copy { max-width: 260px; }
   .jc-portrait-wrap { width: 440px; }
 }
 @media (min-width: 1024px) {
   .jc-nav a { font-size: 1.4rem; }
-  .jc-hero-title { font-size: 17.5vw; }
   .jc-portrait-wrap { width: 520px; }
 }
 
