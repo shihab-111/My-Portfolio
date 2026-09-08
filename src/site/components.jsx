@@ -35,10 +35,16 @@ export function FadeIn({
     </MotionTag>
   );
 }
+
 /**
  * Scales a single line of text so it spans its container exactly.
- * Returns [headingRef, textRef] — the first goes on the block element,
- * the second on an inline span wrapping the text.
+ *
+ * The hero heading used to use a fixed vw font size, which only fitted the
+ * one name it was designed around. This measures the rendered text instead,
+ * so any heading fills the width without overflowing or leaving a gap.
+ *
+ * Returns [headingRef, textRef] — put the first on the block element and the
+ * second on an inline span wrapping the text.
  */
 export function useFitText(text) {
   const headingRef = useRef(null);
@@ -75,7 +81,8 @@ export function useFitText(text) {
 
   return [headingRef, textRef];
 }
-/** Pulls its child toward the cursor while the pointer is nearby. */
+
+/** Pulls its child toward the cursor or finger while it's nearby. */
 export function Magnet({
   children,
   padding = 150,
@@ -90,17 +97,15 @@ export function Magnet({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    // Skip the effect entirely on touch devices and for reduced motion.
-    const fine = window.matchMedia("(pointer: fine)").matches;
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!fine || still) return;
+    // Disabled only for people who've asked for reduced motion.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const handleMove = (e) => {
+    const apply = (clientX, clientY) => {
       const node = ref.current;
       if (!node) return;
       const rect = node.getBoundingClientRect();
-      const dx = e.clientX - (rect.left + rect.width / 2);
-      const dy = e.clientY - (rect.top + rect.height / 2);
+      const dx = clientX - (rect.left + rect.width / 2);
+      const dy = clientY - (rect.top + rect.height / 2);
 
       const near =
         Math.abs(dx) < rect.width / 2 + padding &&
@@ -110,8 +115,32 @@ export function Magnet({
       setOffset(near ? { x: dx / strength, y: dy / strength } : { x: 0, y: 0 });
     };
 
-    window.addEventListener("mousemove", handleMove, { passive: true });
-    return () => window.removeEventListener("mousemove", handleMove);
+    const handleMouse = (e) => apply(e.clientX, e.clientY);
+
+    const handleTouch = (e) => {
+      const touch = e.touches[0];
+      if (touch) apply(touch.clientX, touch.clientY);
+    };
+
+    // Spring back when the finger lifts, since there's no "cursor moved away".
+    const handleEnd = () => {
+      setActive(false);
+      setOffset({ x: 0, y: 0 });
+    };
+
+    window.addEventListener("mousemove", handleMouse, { passive: true });
+    window.addEventListener("touchstart", handleTouch, { passive: true });
+    window.addEventListener("touchmove", handleTouch, { passive: true });
+    window.addEventListener("touchend", handleEnd, { passive: true });
+    window.addEventListener("touchcancel", handleEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouse);
+      window.removeEventListener("touchstart", handleTouch);
+      window.removeEventListener("touchmove", handleTouch);
+      window.removeEventListener("touchend", handleEnd);
+      window.removeEventListener("touchcancel", handleEnd);
+    };
   }, [padding, strength]);
 
   return (
