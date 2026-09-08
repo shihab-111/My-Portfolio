@@ -65,7 +65,9 @@ export function useFitText(text) {
       const width = span.getBoundingClientRect().width;
       if (!width) return;
 
-      heading.style.fontSize = `${(available / width) * PROBE}px`;
+            // 1 = full width. Lower it to shrink the heading.
+      const FILL = 0.85;
+      heading.style.fontSize = `${(available / width) * PROBE * FILL}px`;
     };
 
     fit();
