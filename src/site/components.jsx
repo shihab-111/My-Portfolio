@@ -1,0 +1,190 @@
+import { useRef, useState, useEffect, useMemo } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+
+/** Fade-and-slide entrance, played once when the element scrolls into view. */
+export function FadeIn({
+  children,
+  as = "div",
+  delay = 0,
+  duration = 0.7,
+  x = 0,
+  y = 30,
+  className,
+  style,
+}) {
+  const MotionTag = useMemo(
+    () =>
+      typeof motion[as] !== "undefined"
+        ? motion[as]
+        : motion.create
+        ? motion.create(as)
+        : motion.div,
+    [as]
+  );
+
+  return (
+    <MotionTag
+      className={className}
+      style={style}
+      initial={{ opacity: 0, x, y }}
+      whileInView={{ opacity: 1, x: 0, y: 0 }}
+      viewport={{ once: true, margin: "50px", amount: 0 }}
+      transition={{ duration, delay, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      {children}
+    </MotionTag>
+  );
+}
+
+/** Pulls its child toward the cursor while the pointer is nearby. */
+export function Magnet({
+  children,
+  padding = 150,
+  strength = 3,
+  activeTransition = "transform 0.3s ease-out",
+  inactiveTransition = "transform 0.6s ease-in-out",
+  className,
+  style,
+}) {
+  const ref = useRef(null);
+  const [active, setActive] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    // Skip the effect entirely on touch devices and for reduced motion.
+    const fine = window.matchMedia("(pointer: fine)").matches;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!fine || still) return;
+
+    const handleMove = (e) => {
+      const node = ref.current;
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      const dx = e.clientX - (rect.left + rect.width / 2);
+      const dy = e.clientY - (rect.top + rect.height / 2);
+
+      const near =
+        Math.abs(dx) < rect.width / 2 + padding &&
+        Math.abs(dy) < rect.height / 2 + padding;
+
+      setActive(near);
+      setOffset(near ? { x: dx / strength, y: dy / strength } : { x: 0, y: 0 });
+    };
+
+    window.addEventListener("mousemove", handleMove, { passive: true });
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, [padding, strength]);
+
+  return (
+    <div ref={ref} className={className} style={style}>
+      <div
+        style={{
+          transform: `translate3d(${offset.x}px, ${offset.y}px, 0)`,
+          transition: active ? activeTransition : inactiveTransition,
+          willChange: "transform",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function AnimatedChar({ char, progress, range }) {
+  const opacity = useTransform(progress, range, [0.2, 1]);
+  return (
+    <span style={{ position: "relative", display: "inline-block" }}>
+      <span style={{ opacity: 0.2 }}>{char}</span>
+      <motion.span
+        aria-hidden="true"
+        style={{ position: "absolute", left: 0, top: 0, opacity }}
+      >
+        {char}
+      </motion.span>
+    </span>
+  );
+}
+
+/** Reveals text one character at a time as the block scrolls through. */
+export function AnimatedText({ text = "", className, style }) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 0.8", "end 0.2"],
+  });
+
+  const total = Math.max(text.length, 1);
+  let index = -1;
+  const words = text.split(" ");
+
+  return (
+    <p ref={ref} className={className} style={style}>
+      {words.map((word, wi) => {
+        const chars = word.split("").map((char) => {
+          index += 1;
+          return { char, start: index / total, end: (index + 1) / total, key: index };
+        });
+        index += 1; // the space between words
+        return (
+          <span key={wi}>
+            <span style={{ display: "inline-block", whiteSpace: "nowrap" }}>
+              {chars.map((c) => (
+                <AnimatedChar
+                  key={c.key}
+                  char={c.char}
+                  progress={scrollYProgress}
+                  range={[c.start, c.end]}
+                />
+              ))}
+            </span>
+            {wi < words.length - 1 ? " " : ""}
+          </span>
+        );
+      })}
+    </p>
+  );
+}
+
+const PLACEHOLDER =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="270">
+      <rect width="420" height="270" fill="#1c1a22"/>
+      <circle cx="210" cy="135" r="46" fill="none" stroke="#4a4553" stroke-width="2"/>
+      <path d="M190 148l16-20 12 15 9-10 13 15z" fill="#4a4553"/>
+    </svg>`
+  );
+
+/** Falls back to an inline placeholder when a remote image can't load. */
+export function Img({ src, alt = "", ...rest }) {
+  const handleError = (e) => {
+    if (e.currentTarget.dataset.failed) return;
+    e.currentTarget.dataset.failed = "true";
+    e.currentTarget.classList.add("jc-img-failed");
+    e.currentTarget.src = PLACEHOLDER;
+  };
+  return <img src={src || PLACEHOLDER} alt={alt} onError={handleError} {...rest} />;
+}
+
+export function ContactButton({ label = "Contact Me", href = "#contact" }) {
+  return (
+    <a className="jc-contact-btn" href={href}>
+      {label}
+    </a>
+  );
+}
+
+export function LiveProjectButton({ href }) {
+  if (!href) {
+    return (
+      <button type="button" className="jc-live-btn">
+        Live Project
+      </button>
+    );
+  }
+  return (
+    <a className="jc-live-btn" href={href} target="_blank" rel="noreferrer">
+      Live Project
+    </a>
+  );
+}
